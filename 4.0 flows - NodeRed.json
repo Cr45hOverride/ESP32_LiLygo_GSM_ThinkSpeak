@@ -1,0 +1,322 @@
+[
+    {
+        "id": "fd1a41ed2447807b",
+        "type": "tab",
+        "label": "Flow 3",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "flowtest-inject",
+        "type": "inject",
+        "z": "fd1a41ed2447807b",
+        "name": "Inject Tmer",
+        "props": [],
+        "repeat": "60",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 130,
+        "y": 80,
+        "wires": [
+            [
+                "8a65942304cef514"
+            ]
+        ]
+    },
+    {
+        "id": "flowtest-influxdb",
+        "type": "influxdb out",
+        "z": "fd1a41ed2447807b",
+        "influxdb": "5",
+        "name": "Write to InfluxDB",
+        "measurement": "esg_data",
+        "precision": "s",
+        "retentionPolicy": "",
+        "database": "",
+        "retentionPolicyV18Flux": "",
+        "org": "Harmonis",
+        "bucket": "ESG",
+        "x": 670,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "flowtest-debug",
+        "type": "debug",
+        "z": "fd1a41ed2447807b",
+        "name": "Show Data in Debug",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 680,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "8a65942304cef514",
+        "type": "change",
+        "z": "fd1a41ed2447807b",
+        "name": "Generate Data",
+        "rules": [
+            {
+                "t": "set",
+                "p": "Tempreature",
+                "pt": "global",
+                "to": "100*$random()",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "Humidity",
+                "pt": "global",
+                "to": "100*$random()",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "AirQuality",
+                "pt": "global",
+                "to": "50*$random()",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "timestamp",
+                "pt": "global",
+                "to": "",
+                "tot": "date"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 200,
+        "y": 180,
+        "wires": [
+            [
+                "39f95b218fc5f73a",
+                "8aa5a319a155be58"
+            ]
+        ]
+    },
+    {
+        "id": "39f95b218fc5f73a",
+        "type": "function",
+        "z": "fd1a41ed2447807b",
+        "name": "Prepare Influx Data",
+        "func": "msg.topic=\"InfluxDataFrmGeneratedData\"\nvar Humidity=global.get('Humidity')\nvar Tempreature=global.get('Tempreature')\nvar AirQuality=global.get('AirQuality')\nvar timestamp=global.get('timestamp')\n\n//Humidity = parseFloat(Humidity).toFixed(3);\n//Tempreature = parseFloat(Tempreature).toFixed(3);\n//AirQuality = parseFloat(AirQuality).toFixed(3);\n\nmsg.payload={\n    \"timestamp\": timestamp,\n    \"Tempreature\":parseFloat(Tempreature),\n    \"Humidity\":parseFloat(Humidity),\n    \"AirQuality\":parseFloat(AirQuality),\n\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 120,
+        "wires": [
+            [
+                "flowtest-influxdb",
+                "flowtest-debug"
+            ]
+        ]
+    },
+    {
+        "id": "8aa5a319a155be58",
+        "type": "function",
+        "z": "fd1a41ed2447807b",
+        "name": "Prepare ThingSpeak Data",
+        "func": "msg.topic = \"ThingSpeakData\";\nvar Humidity = global.get('Humidity');\nvar Tempreature = global.get('Tempreature');\nvar AirQuality = global.get('AirQuality');\nvar timestamp = global.get('timestamp');\n\n// Prepare query string\nmsg.url = \"https://api.thingspeak.com/update\";\nmsg.method = \"GET\";\nmsg.payload = {\n    \"api_key\": \"MOC3KU8DJ7NXRGWR\",\n    \"field1\": Tempreature,\n    \"field2\": Humidity,\n    \"field3\": AirQuality,\n    \"created_at\": timestamp\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 220,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "2c82b1b4363e3748",
+        "type": "http request",
+        "z": "fd1a41ed2447807b",
+        "name": "Send to ThingSpeak",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": "query",
+        "url": "https://api.thingspeak.com/update",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 680,
+        "y": 220,
+        "wires": [
+            [
+                "4b5f68dc0f49dd40"
+            ]
+        ]
+    },
+    {
+        "id": "4b5f68dc0f49dd40",
+        "type": "debug",
+        "z": "fd1a41ed2447807b",
+        "name": "Debug Response",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "x": 910,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "dbd4556d325a3134",
+        "type": "http request",
+        "z": "fd1a41ed2447807b",
+        "name": "Get Data from ThingSpeak",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://api.thingspeak.com/channels/2794622//feeds/last.json?api_key=LFIKHYSODY74WHVO",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 180,
+        "y": 440,
+        "wires": [
+            [
+                "db16cfc65b00efec"
+            ]
+        ]
+    },
+    {
+        "id": "db16cfc65b00efec",
+        "type": "function",
+        "z": "fd1a41ed2447807b",
+        "name": "Parse & Store Data",
+        "func": "if (msg.payload) {\n    global.set(\"TS_Tempreature\", msg.payload.field1);\n    global.set(\"TS_Humidity\", msg.payload.field2);\n    global.set(\"TS_AirQuality\", msg.payload.field3);\n    global.set(\"TS_timestamp\", msg.payload.created_at);\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 470,
+        "y": 440,
+        "wires": [
+            [
+                "40158c7561cfbf96"
+            ]
+        ]
+    },
+    {
+        "id": "ada65a53fbdb2c4b",
+        "type": "debug",
+        "z": "fd1a41ed2447807b",
+        "name": "Debug Output",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 940,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "9c94d36973a0a11d",
+        "type": "inject",
+        "z": "fd1a41ed2447807b",
+        "name": "Inject Timer 2",
+        "props": [],
+        "repeat": "60",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 140,
+        "y": 360,
+        "wires": [
+            [
+                "dbd4556d325a3134"
+            ]
+        ]
+    },
+    {
+        "id": "b947b40f64ba8ba7",
+        "type": "influxdb out",
+        "z": "fd1a41ed2447807b",
+        "influxdb": "5",
+        "name": "Write to InfluxDB",
+        "measurement": "esg_data",
+        "precision": "s",
+        "retentionPolicy": "",
+        "database": "",
+        "retentionPolicyV18Flux": "",
+        "org": "Harmonis",
+        "bucket": "ESG",
+        "x": 950,
+        "y": 500,
+        "wires": []
+    },
+    {
+        "id": "40158c7561cfbf96",
+        "type": "function",
+        "z": "fd1a41ed2447807b",
+        "name": "Prepare Influx Data",
+        "func": "msg.topic=\"InfluxDataFrmThinkSpeak\"\n\nvar Humidity = parseFloat(global.get('TS_Humidity')) || 0;\nvar Tempreature = parseFloat(global.get('TS_Tempreature')) || 0;\nvar AirQuality = parseFloat(global.get('TS_AirQuality')) || 0; // Convert to float\nvar timestamp = global.get('timestamp') || new Date().toISOString(); \n\nHumidity = parseFloat(Humidity).toFixed(3);\nTempreature = parseFloat(Tempreature).toFixed(3);\nAirQuality = parseFloat(AirQuality).toFixed(3);\n\nmsg.payload={\n    \"ts_timestamp\": timestamp,\n    \"ts_Tempreature\":parseFloat(Tempreature),\n    \"ts_Humidity\":parseFloat(Humidity),\n    \"ts_AirQuality\":parseFloat(AirQuality),\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 690,
+        "y": 520,
+        "wires": [
+            [
+                "b947b40f64ba8ba7",
+                "ada65a53fbdb2c4b"
+            ]
+        ]
+    },
+    {
+        "id": "5",
+        "type": "influxdb",
+        "hostname": "localhost",
+        "port": "8086",
+        "protocol": "http",
+        "database": "your_database",
+        "name": "InfluxDB_v2",
+        "usetls": false,
+        "tls": "",
+        "influxdbVersion": "2.0",
+        "url": "http://172.17.0.3:8086/",
+        "timeout": "",
+        "rejectUnauthorized": false
+    }
+]
